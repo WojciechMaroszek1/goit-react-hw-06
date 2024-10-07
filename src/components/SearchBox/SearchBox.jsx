@@ -1,11 +1,18 @@
 import css from './SearchBox.module.css';
-import PropTypes from 'prop-types';
 import { Formik, Form, Field } from 'formik';
 import { useId } from 'react';
 import { FaSearch } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilter } from '../../redux/filtersSlice';
 
-const SearchBox = ({ value, handleFilterChange }) => {
+const SearchBox = () => {
 	const searchFieldId = useId();
+	const dispatch = useDispatch();
+	const filter = useSelector(state => state.filters.filter);
+
+	const handleSearch = value => {
+		dispatch(setFilter(value));
+	};
 	return (
 		<Formik>
 			<Form>
@@ -16,21 +23,15 @@ const SearchBox = ({ value, handleFilterChange }) => {
 						<Field
 							className={css.field}
 							type="text"
-							name="name"
 							id={searchFieldId}
-							onChange={handleFilterChange}
-							value={value}
+							onChange={e => handleSearch(e.target.value)}
+							value={filter}
 						/>
 					</div>
 				</div>
 			</Form>
 		</Formik>
 	);
-};
-
-SearchBox.propTypes = {
-	value: PropTypes.string,
-	handleFilterChange: PropTypes.func,
 };
 
 export default SearchBox;

@@ -1,39 +1,64 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-import { useId } from 'react';
-import PropTypes from 'prop-types';
 import css from './ContactForm.module.css';
 import * as Yup from 'yup';
+import { useEffect } from 'react';
+import uuid4 from 'uuid4';
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact, clearErrors } from '../../redux/contactsSlice';
 
 const userSchema = Yup.object().shape({
-	name: Yup.string().min(3, 'Name is too short').max(50, 'Name is too long').required('Required'),
-	number: Yup.string().min(3, 'Number is too short').max(50, 'Number is too long').required('Required'),
+	name: Yup.string()
+		.min(3, 'Name is too short')
+		.max(50, 'Name is too long')
+		.required('Required')
+		.matches(/^[A-Za-z\s]+$/, 'Imię może zawierać tylko litery i spacje'),
+	number: Yup.string()
+		.min(9, 'Number is too short')
+		.max(12, 'Number is too long')
+		.required('Required')
+		.matches(/^\d+(-\d+){0,2}$/, 'Numer może zawierać tylko cyfry i myślniki'),
 });
 
-const ContactForm = ({ addContacts }) => {
-	const nameId = useId();
-	const numberId = useId();
+const ContactForm = () => {
+	const dispatch = useDispatch();
+	const error = useSelector(state => state.contacts.error);
 
-	const handleSubmit = (values, actions) => {
-		const newContact = {
-			...values,
-			key: '',
-			id: '',
-		};
-		console.log(values);
-		addContacts(newContact);
-		actions.resetForm();
+	const handleAddContact = (values, { resetForm, setFieldError }) => {
+		dispatch(
+			addContact({
+				id: uuid4(),
+				name: values.name,
+				number: values.number,
+			})
+		);
+
+		if (error) {
+			if (error.includes('name')) {
+				setFieldError('name', error);
+			}
+			if (error.includes('number')) {
+				setFieldError('number', error);
+			}
+		} else {
+			resetForm();
+		}
 	};
+
+	useEffect(() => {
+		dispatch(clearErrors());
+	}, [dispatch]);
+
 	return (
-		<Formik initialValues={{ name: '', number: '' }} onSubmit={handleSubmit} validationSchema={userSchema}>
+		<Formik initialValues={{ name: '', number: '' }} onSubmit={handleAddContact} validationSchema={userSchema}>
 			<Form className={css.form}>
 				<div className={css.field_box}>
-					<label htmlFor={nameId}>Name</label>
-					<Field className={css.form_field} type="text" name="name" id={nameId}></Field>
+					<label>Name</label>
+					<Field className={css.form_field} type="text" name="name"></Field>
 					<ErrorMessage className={css.error} name="name" component="div" as="span" />
 				</div>
 				<div className={css.field_box}>
-					<label htmlFor={numberId}>Number</label>
-					<Field className={css.form_field} type="text" name="number" id={numberId}></Field>
+					<label>Number</label>
+					<Field className={css.form_field} type="text" name="number"></Field>
 					<ErrorMessage className={css.error} name="number" component="div" as="span" />
 				</div>
 				<button type="submit" className={css.button}>
@@ -43,7 +68,5 @@ const ContactForm = ({ addContacts }) => {
 		</Formik>
 	);
 };
-ContactForm.propTypes = {
-	addContacts: PropTypes.func,
-};
+
 export default ContactForm;
